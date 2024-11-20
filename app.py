@@ -248,4 +248,6 @@ def download_file(filename):
     return send_from_directory(app.config['DOWNLOAD_FOLDER'], filename, as_attachment=True)
 
 if __name__ == '__main__':
+    # Development server with debug mode
+    print("Running in development mode with auto-reloading enabled...")
     app.run(debug=True, port=5000)

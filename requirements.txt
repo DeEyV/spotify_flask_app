@@ -5,3 +5,5 @@ yt-dlp>=2023.7.6  # Better YouTube downloader
 mutagen>=1.46.0   # Better metadata handling
 pydub>=0.25.1     # Audio processing capabilities
 requests>=2.31.0  # Required for API calls
+waitress>=2.0.0   # For Windows deployment
+gunicorn>=21.2.0  # For Mac/Linux deployment

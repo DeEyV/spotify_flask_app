@@ -22,16 +22,37 @@ pip install -r requirements.txt
 3. Run the application:
 ```bash
 # For Windows
-python -m flask --app app.py run
+python run.py
 
 # For production (Windows)
 waitress-serve --port=5000 app:app
 
 # For production (Mac/Linux)
-gunicorn -w 4 -b 127.0.0.1:5000 app:app
+gunicorn -w 4 app:app
 ```
 
 4. Open your browser and visit: `http://localhost:5000`
+
+## 🌐 Deployment
+
+### Render Deployment
+1. Set these environment variables in your Render dashboard:
+```
+ON_SERVER=true
+FLASK_ENV=production
+```
+
+2. Use this start command:
+```bash
+gunicorn app:app --bind 0.0.0.0:$PORT --log-file -
+```
+
+3. The app will automatically use `/tmp/downloads` for file storage on the server
+
+### Local Development
+- No environment variables needed
+- Files are stored in the local `downloads` directory
+- Automatically uses the appropriate server (Waitress for Windows, Gunicorn for Mac/Linux)
 
 ## 💻 Usage
 
@@ -58,7 +79,7 @@ Core dependencies:
 - Flask==2.3.3
 - spotdl==4.2.10
 - waitress>=2.0.0 (Windows deployment)
-- gunicorn>=21.2.0 (Mac/Linux deployment)
+- gunicorn>=21.2.0 (Mac/Linux/Server deployment)
 
 ## 📝 Notes
 
@@ -97,6 +118,3 @@ Feel free to:
 - Suggest features
 - Submit pull requests
 
-## 📄 License
-
-MIT License - feel free to use and modify!

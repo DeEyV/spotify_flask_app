@@ -18,9 +18,21 @@ from components.download_manager import DownloadManager
 # Initialize Flask app
 app = Flask(__name__)
 
+# Environment detection
+ON_SERVER = os.getenv('ON_SERVER', False)
+
 # Configuration
-app.config['DOWNLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'downloads')
+if ON_SERVER:
+    # Render environment
+    app.config['DOWNLOAD_FOLDER'] = '/tmp/downloads'
+else:
+    # Local environment (Windows/Mac/Linux)
+    app.config['DOWNLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'downloads')
+
 app.config['MAX_FILE_AGE'] = 24  # hours
+
+# Create download directory if it doesn't exist
+os.makedirs(app.config['DOWNLOAD_FOLDER'], exist_ok=True)
 
 # Initialize managers
 file_manager = FileManager(app.config['DOWNLOAD_FOLDER'], app.config['MAX_FILE_AGE'])

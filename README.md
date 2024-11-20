@@ -1,102 +1,102 @@
-# Spotify Flask Downloader
+# Spotify Track Downloader
 
-A web application built with Flask that allows you to download songs from Spotify. You can download individual tracks, entire playlists, or albums while preserving metadata and album artwork.
+A sleek web application built with Flask that allows you to download individual tracks from Spotify. Features a modern, responsive interface with real-time download progress tracking.
 
-## Features
+## ✨ Features
 
-- Download Spotify tracks, playlists, and albums
-- Preserves song metadata and album artwork
-- Clean and intuitive web interface
-- Progress tracking for downloads
-- Supports multiple concurrent downloads
+- 🎵 Download individual Spotify tracks
+- 🎨 Modern, responsive UI with multiple themes
+- 📊 Real-time download progress tracking
+- 🎧 Multiple audio format support (MP3, FLAC, M4A, etc.)
+- 🔊 Customizable bitrate options
+- 🗑️ Automatic file cleanup (24-hour retention)
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Python 3.8 or higher
-- pip (Python package installer)
-
-## Installation
-
-1. Clone this repository or download the source code:
-```bash
-git clone <repository-url>
-cd spotify_flask_app
-```
-
-2. Install the required dependencies:
+1. Install Python 3.8 or higher
+2. Install the required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
-
-1. First, run the setup script to create necessary directories:
+3. Run the application:
 ```bash
-python setup_dirs.py
+# For Windows
+python -m flask --app app.py run
+
+# For production (Windows)
+waitress-serve --port=5000 app:app
+
+# For production (Mac/Linux)
+gunicorn -w 4 -b 127.0.0.1:5000 app:app
 ```
 
-2. Start the Flask application:
-```bash
-python app.py
-```
+4. Open your browser and visit: `http://localhost:5000`
 
-3. Open your web browser and navigate to:
-```
-http://localhost:5000
-```
+## 💻 Usage
 
-4. Enter a Spotify URL (track, playlist, or album) in the input field and click "Download"
+1. Open the web interface
+2. (Optional) Choose your preferred theme
+3. Paste a Spotify track URL
+4. Select your preferred audio format and quality
+5. Click Download
+6. Wait for the download to complete
+7. Click the download button next to the file to save it
 
-## Dependencies
+## 🛠️ Supported Formats
 
-The application requires the following main packages:
+- MP3 (128k - 320k)
+- FLAC (Lossless)
+- M4A
+- OGG
+- OPUS
+- WAV
+
+## ⚙️ Requirements
+
+Core dependencies:
 - Flask==2.3.3
-- Werkzeug==2.3.7
 - spotdl==4.2.10
-- yt-dlp>=2023.7.6
-- mutagen>=1.46.0
-- pydub>=0.25.1
-- requests>=2.31.0
+- waitress>=2.0.0 (Windows deployment)
+- gunicorn>=21.2.0 (Mac/Linux deployment)
 
-## Notes
+## 📝 Notes
 
-- Downloaded files will be saved in the `downloads` directory
-- The application supports concurrent downloads
-- Make sure you have enough disk space for your downloads
+- Downloads are automatically deleted after 24 hours
+- Large files (like FLAC) may take longer to process
+- Internet connection required for downloading
 
-## For Developers
+## 🔧 Troubleshooting
 
-If you plan to develop or modify this application, it's recommended to use a virtual environment:
+1. **Download not starting?**
+   - Check your internet connection
+   - Verify the Spotify URL is correct
+   - Ensure spotdl is properly installed
 
-### Why Use a Virtual Environment?
-- Isolates project dependencies from other Python projects
-- Prevents conflicts between package versions
-- Makes it easier to manage and reproduce development environments
-- Protects your system Python installation
+2. **File not downloading?**
+   - Try refreshing the page
+   - Check if the file exists in the downloads section
+   - Try a different audio format
 
-### Setting up a Virtual Environment
+3. **Slow downloads?**
+   - Try a lower quality setting
+   - Check your internet speed
+   - Consider using MP3 instead of FLAC
 
-1. Create a virtual environment:
-```bash
-python -m venv venv
-```
+## 🔒 Security Notes
 
-2. Activate the virtual environment:
-- On Windows:
-```bash
-venv\Scripts\activate
-```
-- On macOS/Linux:
-```bash
-source venv/bin/activate
-```
+- All downloads are temporary (24-hour retention)
+- Files are served securely
+- Input validation for all user data
+- Safe file handling and sanitization
 
-3. Then proceed with the regular installation steps.
+## 🌟 Contributing
 
-## Troubleshooting
+Feel free to:
+- Report bugs
+- Suggest features
+- Submit pull requests
 
-If you encounter any issues:
-1. Make sure all dependencies are correctly installed
-2. Check if the `downloads` directory exists
-3. Ensure you have a stable internet connection
-4. Verify that the Spotify URL is valid and accessible
+## 📄 License
+
+MIT License - feel free to use and modify!

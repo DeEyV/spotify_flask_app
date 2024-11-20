@@ -300,7 +300,7 @@
                         <h5 class="mb-1">{{ file.display_name }}</h5>
                         <small class="text-muted">{{ file.size }}</small>
                     </div>
-                    <a href="{{ url_for('download_file', filename=file.filename) }}" class="btn btn-primary btn-sm">
+                    <a href="{{ url_for('serve_file', filename=file.filename) }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-download"></i> Download
                     </a>
                 </div>
@@ -311,6 +311,59 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Theme Switching Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeMenu = document.getElementById('themeMenu');
+            const themeOptions = document.querySelectorAll('.theme-option');
+            
+            // Load saved theme
+            const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Update active theme in menu
+            themeOptions.forEach(option => {
+                if (option.dataset.theme === savedTheme) {
+                    option.classList.add('active');
+                }
+            });
+            
+            // Toggle theme menu
+            themeToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                themeMenu.classList.toggle('show');
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!themeMenu.contains(e.target) && !themeToggle.contains(e.target)) {
+                    themeMenu.classList.remove('show');
+                }
+            });
+            
+            // Theme selection
+            themeOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const theme = this.dataset.theme;
+                    
+                    // Remove active class from all options
+                    themeOptions.forEach(opt => opt.classList.remove('active'));
+                    
+                    // Add active class to selected option
+                    this.classList.add('active');
+                    
+                    // Apply theme
+                    document.documentElement.setAttribute('data-theme', theme);
+                    
+                    // Save theme preference
+                    localStorage.setItem('selectedTheme', theme);
+                    
+                    // Close menu
+                    themeMenu.classList.remove('show');
+                });
+            });
+        });
+
         let currentTaskId = null;
         let progressInterval = null;
 
@@ -326,12 +379,17 @@
                     console.log('Progress:', data);  // Debug log
                     
                     const downloadBtn = document.getElementById('downloadBtn');
+                    const downloadStatus = document.getElementById('downloadStatus');
+                    const downloadSpinner = document.getElementById('downloadSpinner');
+                    const successAlert = document.getElementById('successAlert');
+                    const errorAlert = document.getElementById('errorAlert');
                     
                     if (data.status === 'error') {
                         // Show error and stop checking
-                        document.getElementById('downloadStatus').innerHTML = `Error: ${data.message}`;
-                        document.getElementById('downloadSpinner').style.display = 'none';
-                        document.getElementById('errorAlert').style.display = 'block';
+                        downloadStatus.innerHTML = `Error: ${data.message}`;
+                        downloadSpinner.style.display = 'none';
+                        errorAlert.style.display = 'block';
+                        successAlert.style.display = 'none';
                         downloadBtn.disabled = false;
                         downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
                         clearInterval(progressInterval);
@@ -339,31 +397,47 @@
                     }
                     else if (data.status === 'completed') {
                         // Show success and stop checking
-                        document.getElementById('downloadStatus').innerHTML = 'Download completed!';
-                        document.getElementById('downloadSpinner').style.display = 'none';
-                        document.getElementById('successAlert').style.display = 'block';
-                        document.getElementById('errorAlert').style.display = 'none';
+                        downloadStatus.innerHTML = 'Download completed!';
+                        downloadSpinner.style.display = 'none';
+                        successAlert.style.display = 'block';
+                        errorAlert.style.display = 'none';
                         downloadBtn.disabled = false;
                         downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
                         clearInterval(progressInterval);
                         currentTaskId = null;
+                        
                         // Refresh the page after 2 seconds
-                        setTimeout(() => location.reload(), 2000);
+                        setTimeout(() => {
+                            location.reload();
+                            clearInterval(progressInterval);  // Clear again just to be safe
+                        }, 2000);
                     }
                     else {
                         // Update progress
-                        document.getElementById('downloadStatus').innerHTML = data.message || 'Downloading...';
-                        document.getElementById('downloadSpinner').style.display = 'inline-block';
-                        document.getElementById('successAlert').style.display = 'none';
-                        document.getElementById('errorAlert').style.display = 'none';
+                        downloadStatus.innerHTML = data.message || 'Downloading...';
+                        downloadSpinner.style.display = 'inline-block';
+                        successAlert.style.display = 'none';
+                        errorAlert.style.display = 'none';
                         downloadBtn.disabled = true;
                         downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
                     }
                 })
                 .catch(error => {
                     console.error('Progress check error:', error);
-                    // On error, keep checking - the backend might just be busy
-                    document.getElementById('downloadStatus').innerHTML = 'Checking download status...';
+                    const downloadStatus = document.getElementById('downloadStatus');
+                    const downloadSpinner = document.getElementById('downloadSpinner');
+                    const downloadBtn = document.getElementById('downloadBtn');
+                    
+                    // If we get a 404, assume the task is complete or server restarted
+                    if (error.message.includes('404') || error.message.includes('failed')) {
+                        downloadStatus.innerHTML = 'Download may be complete. Refreshing...';
+                        downloadSpinner.style.display = 'none';
+                        downloadBtn.disabled = false;
+                        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                        clearInterval(progressInterval);
+                        currentTaskId = null;
+                        setTimeout(() => location.reload(), 2000);
+                    }
                 });
         }
 

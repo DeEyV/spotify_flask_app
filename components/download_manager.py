@@ -109,27 +109,22 @@ class DownloadManager:
         except Exception as e:
             print(f"Error clearing download folder: {str(e)}")  # Debug log
     
-    def get_progress(self, task_id: str) -> Optional[Dict]:
-        """
-        Get progress for a specific task
-        
-        Args:
-            task_id (str): Task ID to check
+    def get_progress(self, task_id: str) -> Dict:
+        """Get progress for a specific task"""
+        if task_id not in self.download_progress:
+            return None
             
-        Returns:
-            Optional[Dict]: Progress data if task exists, None otherwise
-        """
-        if task_id in self.download_progress:
-            return self.download_progress[task_id]
-        elif task_id in self.active_tasks:
-            # Task exists but no progress yet
-            return {
-                'status': 'starting',
-                'progress': 0,
-                'message': 'Initializing download...'
-            }
-        return None
-
+        progress = self.download_progress[task_id]
+        
+        # Check if the task is completed and clean up
+        if progress['status'] == 'completed':
+            # Keep completed tasks for 5 minutes to allow frontend to detect completion
+            if time.time() - progress.get('completion_time', 0) > 300:  # 5 minutes
+                del self.download_progress[task_id]
+                return None
+                
+        return progress
+        
     def _process_download_queue(self):
         """Process downloads in the queue"""
         while True:
@@ -158,84 +153,50 @@ class DownloadManager:
                     # Monitor process output
                     start_time = time.time()
                     last_output_time = start_time
-                    partial_files = set()
                     
                     while True:
+                        # Check if task was cancelled
+                        if task_id not in self.download_progress:
+                            process.terminate()
+                            break
+                            
                         # Read output and error streams
                         output = process.stdout.readline() if process.stdout else ''
                         error = process.stderr.readline() if process.stderr else ''
                         
-                        # Update last output time if we got any output
                         if output or error:
                             last_output_time = time.time()
-                            
-                        # Log output for debugging
-                        if output:
-                            print(f"Task {task_id} output: {output.strip()}")
-                        if error:
-                            print(f"Task {task_id} error: {error.strip()}")
-                            
-                        # Check for completion or errors
+                            if error:
+                                print(f"Error output: {error.strip()}")
+                            if output:
+                                print(f"Standard output: {output.strip()}")
+                                
+                        # Check for completion
                         if process.poll() is not None:
                             break
                             
-                        # Check for partial and completed files
-                        files = os.listdir(self.download_folder)
-                        current_files = {f for f in files if f.endswith(('.mp3', '.m4a', '.ogg', '.flac', '.opus', '.wav'))}
-                        
-                        # Detect new files
-                        new_files = current_files - partial_files
-                        if new_files:
-                            partial_files = current_files
-                            self.download_progress[task_id]['message'] = f'Processing audio... ({len(partial_files)} files)'
-                            
-                        # Check for completed files (no .part extension)
-                        completed_files = {f for f in current_files if not f.endswith('.part')}
-                        if completed_files:
-                            self.download_progress[task_id]['status'] = 'completed'
-                            self.download_progress[task_id]['message'] = 'Download completed!'
-                            self.download_progress[task_id]['progress'] = 100
-                            process.terminate()
-                            break
-                            
                         # Check for timeout (no output for 5 minutes)
-                        if time.time() - last_output_time > 300:  # 5 minutes
+                        if time.time() - last_output_time > 300:
                             raise TimeoutError("Download timed out - no output for 5 minutes")
                             
-                        # Check for overall timeout (15 minutes)
-                        if time.time() - start_time > 900:  # 15 minutes
-                            raise TimeoutError("Download timed out after 15 minutes")
-                            
-                        # Small sleep to prevent CPU overuse
-                        time.sleep(0.5)
+                        time.sleep(0.1)  # Prevent CPU overuse
                         
-                    # Final status check
+                    # Check final status
                     if process.returncode == 0:
-                        files = os.listdir(self.download_folder)
-                        completed_files = [f for f in files if f.endswith(('.mp3', '.m4a', '.ogg', '.flac', '.opus', '.wav'))]
-                        if completed_files:
-                            self.download_progress[task_id]['status'] = 'completed'
-                            self.download_progress[task_id]['message'] = 'Download completed!'
-                            self.download_progress[task_id]['progress'] = 100
-                        else:
-                            raise Exception("No output files found after process completion")
+                        self.download_progress[task_id]['status'] = 'completed'
+                        self.download_progress[task_id]['message'] = 'Download completed!'
+                        self.download_progress[task_id]['completion_time'] = time.time()
                     else:
                         error_output = process.stderr.read() if process.stderr else 'Unknown error'
-                        raise Exception(f"Process failed with error: {error_output}")
-                    
+                        raise Exception(f"Process failed: {error_output}")
+                        
                 except Exception as e:
-                    print(f"Error during download for task {task_id}: {str(e)}")
+                    print(f"Download error: {str(e)}")
                     self.download_progress[task_id]['status'] = 'error'
                     self.download_progress[task_id]['message'] = f'Download failed: {str(e)}'
-                    self.download_progress[task_id]['error'] = str(e)
-                
-                finally:
-                    # Cleanup
-                    if task_id in self.active_tasks:
-                        self.active_tasks.remove(task_id)
                     
             except Exception as e:
-                print(f"Error in download queue processor: {str(e)}")
+                print(f"Queue processor error: {str(e)}")
                 continue
 
     def _cleanup_tasks(self):

@@ -81,71 +81,59 @@ def get_progress(task_id):
         print(f"Error in progress endpoint: {str(e)}")  # Debug log
         return jsonify({'error': str(e)}), 500
 
-@app.route('/download_file/<path:filename>')
-def download_file(filename):
-    """Download a specific file from the downloads directory"""
-    try:
-        # Get the file path
-        file_path = file_manager.get_file_path(filename)
-        
-        # Check if file exists
-        if not os.path.exists(file_path):
-            app.logger.error(f"File not found: {file_path}")
-            return jsonify({'error': 'File not found'}), 404
-            
-        # Get the directory and filename
-        directory = os.path.dirname(file_path)
-        filename = os.path.basename(file_path)
-        
-        # Send file
-        return send_from_directory(
-            directory,
-            filename,
-            as_attachment=True,
-            download_name=filename  # Ensure correct filename
-        )
-    except Exception as e:
-        app.logger.error(f"Error downloading file {filename}: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/downloads/<filename>')
+@app.route('/downloads/<path:filename>')
 def serve_file(filename):
     """
     File download route
     Serve a downloaded file
     """
     try:
+        # Get file path and check existence
         file_path = file_manager.get_file_path(filename)
         if not os.path.exists(file_path):
-            return jsonify({
-                'error': 'File not found'
-            }), 404
+            app.logger.error(f"File not found: {file_path}")
+            return jsonify({'error': 'File not found'}), 404
             
-        # Get MIME type based on file extension
-        mime_type = None  # Let Flask detect the MIME type
+        # Get directory and clean filename
+        directory = os.path.dirname(file_path)
+        filename = os.path.basename(file_path)
         
-        # Set response headers for better download handling
-        response = send_from_directory(
-            directory=app.config['DOWNLOAD_FOLDER'],
-            path=filename,
-            as_attachment=True,
-            download_name=filename.replace('%20', ' ')  # Clean filename
-        )
+        app.logger.info(f"Serving file: {file_path}")
         
-        # Add headers for better download handling
-        response.headers['Content-Length'] = os.path.getsize(file_path)
-        response.headers['Accept-Ranges'] = 'bytes'
-        response.headers['Cache-Control'] = 'no-cache'
-        
-        return response
-        
+        # Send file with proper headers
+        try:
+            response = send_from_directory(
+                directory,
+                filename,
+                as_attachment=True,
+                download_name=filename
+            )
+            
+            # Add headers for better download handling
+            response.headers['Content-Length'] = os.path.getsize(file_path)
+            response.headers['Accept-Ranges'] = 'bytes'
+            response.headers['Cache-Control'] = 'no-cache'
+            
+            return response
+            
+        except Exception as e:
+            app.logger.error(f"Error sending file: {str(e)}")
+            return jsonify({'error': f'Error sending file: {str(e)}'}), 500
+            
     except Exception as e:
-        print(f"Download error: {str(e)}")  # Log the error
-        return jsonify({
-            'error': f'Error downloading file: {str(e)}'
-        }), 500
+        app.logger.error(f"Error in serve_file: {str(e)}")
+        return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
+
+@app.route('/download_file/<path:filename>')
+def download_file(filename):
+    """Redirect old download route to new one"""
+    return serve_file(filename)
 
 if __name__ == '__main__':
-    # Development server with debug mode
-    print("Running in development mode with auto-reloading enabled...")
-    app.run(debug=True, port=5000)
+    # Development server with debug mode but no auto-reload
+    print("Running in development mode with auto-reloading disabled...")
+    app.run(
+        debug=True,
+        use_reloader=False,  # Disable auto-reloader
+        port=5000
+    )

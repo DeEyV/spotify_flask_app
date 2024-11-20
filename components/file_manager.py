@@ -7,6 +7,7 @@ import os
 import time
 from typing import List, Dict
 from flask import url_for
+from urllib.parse import quote
 
 class FileManager:
     def __init__(self, download_folder: str, max_age_hours: int = 24):
@@ -44,11 +45,14 @@ class FileManager:
                 
                 # Only list audio files
                 if filename.lower().endswith(('.mp3', '.m4a', '.ogg', '.opus', '.flac', '.wav')):
+                    # URL encode the filename for download
+                    safe_filename = quote(filename)
+                    
                     # Clean up display name
-                    display_name = os.path.splitext(filename)[0].replace('%20', ' ')
+                    display_name = os.path.splitext(filename)[0]
                     
                     file_list.append({
-                        'filename': filename,  # Original filename for download
+                        'filename': safe_filename,  # URL-safe filename for download
                         'display_name': display_name,  # Clean name for display
                         'size': f"{size / 1024 / 1024:.1f} MB",
                         'mod_time': mod_time
@@ -92,12 +96,20 @@ class FileManager:
         Returns:
             str: Absolute path to the file
         """
+        # URL decode the filename first
+        from urllib.parse import unquote
+        filename = unquote(filename)
+        
         # Clean the filename and ensure it's safe
-        safe_filename = os.path.basename(filename).replace('%20', ' ')
+        safe_filename = os.path.basename(filename)
         file_path = os.path.join(self.download_folder, safe_filename)
         
+        # Convert to absolute path
+        abs_file_path = os.path.abspath(file_path)
+        abs_download_folder = os.path.abspath(self.download_folder)
+        
         # Verify the path is within download folder
-        if not os.path.abspath(file_path).startswith(os.path.abspath(self.download_folder)):
+        if not abs_file_path.startswith(abs_download_folder):
             raise ValueError("Invalid file path")
             
         return file_path

@@ -1,9 +1,5 @@
 Flask==2.3.3
 Werkzeug==2.3.7
 spotdl==4.2.10
-yt-dlp>=2023.7.6  # Better YouTube downloader
-mutagen>=1.46.0   # Better metadata handling
-pydub>=0.25.1     # Audio processing capabilities
-requests>=2.31.0  # Required for API calls
-waitress>=2.0.0   # For Windows deployment
-gunicorn>=21.2.0  # For Mac/Linux deployment
+waitress>=2.0.0  # Windows deployment server
+gunicorn>=21.2.0  # Mac/Linux deployment server

@@ -6,7 +6,6 @@ A sleek web application built with Flask that allows you to download individual 
 
 - 🎵 Download individual Spotify tracks
 - 🎨 Modern, responsive UI with multiple themes
-- 📊 Real-time download progress tracking
 - 🎧 Multiple audio format support (MP3, FLAC, M4A, etc.)
 - 🔊 Customizable bitrate options
 - 🗑️ Automatic file cleanup (24-hour retention)
@@ -32,27 +31,6 @@ gunicorn -w 4 app:app
 ```
 
 4. Open your browser and visit: `http://localhost:5000`
-
-## 🌐 Deployment
-
-### Render Deployment
-1. Set these environment variables in your Render dashboard:
-```
-ON_SERVER=true
-FLASK_ENV=production
-```
-
-2. Use this start command:
-```bash
-gunicorn app:app --bind 0.0.0.0:$PORT --log-file -
-```
-
-3. The app will automatically use `/tmp/downloads` for file storage on the server
-
-### Local Development
-- No environment variables needed
-- Files are stored in the local `downloads` directory
-- Automatically uses the appropriate server (Waitress for Windows, Gunicorn for Mac/Linux)
 
 ## 💻 Usage
 
@@ -117,4 +95,3 @@ Feel free to:
 - Report bugs
 - Suggest features
 - Submit pull requests
-

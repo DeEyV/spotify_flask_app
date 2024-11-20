@@ -1,23 +1,26 @@
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Virtual environment
+# Virtual Environment
 venv/
 env/
 ENV/
 
-# Downloads folder (since it's temporary storage)
+# Downloads folder
 downloads/
 
-# IDE specific files
+# IDE
 .vscode/
 .idea/
+
+# Logs
+*.log
 
 # Environment variables
 .env
 
-# OS specific files
+# System files
 .DS_Store
 Thumbs.db

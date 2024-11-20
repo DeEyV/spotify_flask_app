@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Default Theme (Dark) */
+            --bg-color: #121212;
+            --card-bg: #282828;
+            --input-bg: #3e3e3e;
+            --text-color: #ffffff;
+            --text-muted: #b3b3b3;
+            --primary-color: #1DB954;
+            --primary-hover: #1ed760;
+            --border-radius: 10px;
+        }
+
+        /* Cyberpunk Theme */
+        [data-theme="cyberpunk"] {
+            --bg-color: #000000;
+            --card-bg: #1a1a2e;
+            --input-bg: #16213e;
+            --text-color: #00ff9f;
+            --text-muted: #4ecca3;
+            --primary-color: #ff2e63;
+            --primary-hover: #ff4b7d;
+            --border-radius: 0px;
+        }
+
+        /* Synthwave Theme */
+        [data-theme="synthwave"] {
+            --bg-color: #2b1055;
+            --card-bg: #3b185f;
+            --input-bg: #4a1f6f;
+            --text-color: #f8f7ff;
+            --text-muted: #c8c6ff;
+            --primary-color: #f72585;
+            --primary-hover: #ff4d9f;
+            --border-radius: 15px;
+        }
+
+        /* Ocean Theme */
+        [data-theme="ocean"] {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --input-bg: #0f3460;
+            --text-color: #e94560;
+            --text-muted: #ff8fb1;
+            --primary-color: #0f3460;
+            --primary-hover: #1a4b8c;
+            --border-radius: 20px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control {
+            background-color: var(--input-bg);
+            border: none;
+            color: var(--text-color);
+            border-radius: var(--border-radius);
+        }
+
+        .form-control:focus {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            box-shadow: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .theme-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .progress {
+            background-color: var(--input-bg);
+            height: 10px;
+            margin-top: 10px;
+            border-radius: var(--border-radius);
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            color: var(--text-muted);
+        }
+
+        .file-item {
+            background-color: var(--input-bg);
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .file-name {
+            color: var(--text-color);
+        }
+
+        .file-size {
+            color: var(--text-muted);
+        }
+
+        .download-btn {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            border-radius: var(--border-radius);
+        }
+
+        .download-btn:hover {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Selector -->
+    <div class="theme-selector">
+        <select class="form-select" id="themeSelect" onchange="changeTheme(this.value)">
+            <option value="default">Dark Theme</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="synthwave">Synthwave</option>
+            <option value="ocean">Ocean</option>
+        </select>
+    </div>
+
+    <div class="container">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Download Music</h5>
+                <form id="downloadForm">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Spotify URL</label>
+                        <input type="url" class="form-control" id="url" name="url" required 
+                               placeholder="https://open.spotify.com/track/...">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="downloadBtn">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </form>
+
+                <div id="downloadProgress" style="display: none;" class="mt-3">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text mt-2">Initializing download...</div>
+                </div>
+
+                <div class="alert alert-success mt-3" role="alert" id="successAlert" style="display: none;">
+                    Download completed successfully!
+                </div>
+
+                <div class="alert alert-danger mt-3" role="alert" id="errorAlert" style="display: none;">
+                    An error occurred during download.
+                </div>
+            </div>
+        </div>
+
+        <!-- Downloaded Files Section -->
+        <div class="card files-list" {% if not files %}style="display: none;"{% endif %}>
+            <div class="card-body">
+                <h5 class="card-title mb-4">Downloaded Files</h5>
+                <div id="filesList" class="list-group">
+                    {% for file in files %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="{{ file.download_url }}" class="text-decoration-none">
+                                <i class="fas fa-music me-2"></i>{{ file.name }}
+                            </a>
+                            <small class="text-muted d-block">{{ file.size }}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-warning">
+                                <i class="fas fa-clock me-1"></i>Deletes in: {{ file.time_left }}
+                            </small>
+                            <a href="{{ file.download_url }}" class="btn btn-sm btn-outline-primary ms-2" download>
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+        let progressInterval = null;
+
+        // Hide all alerts
+        function hideAlerts() {
+            document.getElementById('downloadProgress').style.display = 'none';
+            document.getElementById('successAlert').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'none';
+        }
+
+        // Show warning dialog only when user clicks download link
+        document.querySelectorAll('#filesList a[href]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!confirm('This file will be deleted after 24 hours or on page reload. Download now?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        function updateProgress(taskId) {
+            fetch(`/progress/${taskId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const progressBar = document.querySelector('.progress-bar');
+                    const progressText = document.querySelector('.progress-text');
+                    const progressDiv = document.getElementById('downloadProgress');
+                    const successAlert = document.getElementById('successAlert');
+                    const errorAlert = document.getElementById('errorAlert');
+                    
+                    if (data.status === 'downloading') {
+                        progressDiv.style.display = 'block';
+                        successAlert.style.display = 'none';
+                        errorAlert.style.display = 'none';
+                        
+                        if (data.total_tracks > 0) {
+                            const progress = (data.current_track / data.total_tracks) * 100;
+                            progressBar.style.width = `${progress}%`;
+                            progressText.textContent = `Downloading track ${data.current_track} of ${data.total_tracks}`;
+                        }
+                    } else if (data.status === 'completed') {
+                        progressDiv.style.display = 'none';
+                        successAlert.style.display = 'block';
+                        errorAlert.style.display = 'none';
+                        
+                        // Auto-hide success message after 3 seconds
+                        setTimeout(() => {
+                            successAlert.style.display = 'none';
+                        }, 3000);
+                        
+                        clearInterval(progressInterval);
+                        currentTaskId = null;
+                        
+                        // Reset download button
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        downloadBtn.disabled = false;
+                        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                        
+                        // Refresh the page to show new files
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else if (data.status === 'failed') {
+                        progressDiv.style.display = 'none';
+                        successAlert.style.display = 'none';
+                        errorAlert.style.display = 'block';
+                        errorAlert.textContent = data.error || 'Download failed';
+                        
+                        // Auto-hide error message after 5 seconds
+                        setTimeout(() => {
+                            errorAlert.style.display = 'none';
+                        }, 5000);
+                        
+                        clearInterval(progressInterval);
+                        currentTaskId = null;
+                        
+                        // Reset download button
+                        const downloadBtn = document.getElementById('downloadBtn');
+                        downloadBtn.disabled = false;
+                        downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    hideAlerts();
+                    document.getElementById('errorAlert').style.display = 'block';
+                    document.getElementById('errorAlert').textContent = 'Error checking download progress';
+                    
+                    // Auto-hide error message after 5 seconds
+                    setTimeout(() => {
+                        document.getElementById('errorAlert').style.display = 'none';
+                    }, 5000);
+                });
+        }
+
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlerts();  // Hide any existing alerts when starting new download
+            
+            const downloadBtn = document.getElementById('downloadBtn');
+            const url = document.getElementById('url').value;
+            
+            try {
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting Download...';
+                
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.task_id) {
+                    currentTaskId = data.task_id;
+                    progressInterval = setInterval(() => updateProgress(currentTaskId), 1000);
+                } else {
+                    throw new Error(data.error || 'Failed to start download');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('errorAlert').style.display = 'block';
+                document.getElementById('errorAlert').textContent = error.message || 'Error starting download';
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+            }
+        });
+
+        // Theme handling
+        function changeTheme(theme) {
+            document.body.setAttribute('data-theme', theme === 'default' ? '' : theme);
+            localStorage.setItem('preferred-theme', theme);
+        }
+
+        // Load saved theme
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('preferred-theme');
+            if (savedTheme) {
+                document.getElementById('themeSelect').value = savedTheme;
+                changeTheme(savedTheme);
+            }
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
